@@ -35,8 +35,9 @@ type State struct {
 	swap      []byte
 	lut       []int32
 	sa        []int   // BWT scratch, allocated on first encode
-	lf        []int32 // unBWT scratch, allocated on first decode
+	lf        []int32 // unBWT biPSI scratch, allocated on first decode
 	cm        cm.Coder
+	unbwt     *bwt.Unbwt // unBWT bucket tables, allocated on first decode
 }
 
 // NewState creates a codec for blocks of at most blockSize bytes.
@@ -63,9 +64,17 @@ func (s *State) saBuf() []int {
 
 func (s *State) lfBuf() []int32 {
 	if s.lf == nil {
-		s.lf = make([]int32, Bound(int(s.blockSize)))
+		// The biPSI array needs one entry per position plus the sentinel.
+		s.lf = make([]int32, Bound(int(s.blockSize))+1)
 	}
 	return s.lf
+}
+
+func (s *State) unbwtBuf() *bwt.Unbwt {
+	if s.unbwt == nil {
+		s.unbwt = new(bwt.Unbwt)
+	}
+	return s.unbwt
 }
 
 func getS32(b []byte) int32     { return int32(binary.LittleEndian.Uint32(b)) }
@@ -253,7 +262,7 @@ func (s *State) DecodeBlock(buffer []byte, compressedSize, origSize int32) (int3
 		return -1, ErrMalformedHeader
 	}
 
-	if err := bwt.Decode(b2[:sizeBeforeBwt], b1[:sizeBeforeBwt], s.lfBuf(), bwtIdx); err != nil {
+	if err := s.unbwtBuf().Decode(b2[:sizeBeforeBwt], b1[:sizeBeforeBwt], s.lfBuf(), bwtIdx); err != nil {
 		return -1, ErrBWT
 	}
 	b1, b2 = b2, b1

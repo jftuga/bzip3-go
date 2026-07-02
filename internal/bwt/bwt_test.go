@@ -17,7 +17,7 @@ func TestKnownVector(t *testing.T) {
 		t.Fatalf("Encode(abab) = %q idx %d, want \"bbaa\" idx 2", out, idx)
 	}
 	dec := make([]byte, 4)
-	if err := Decode(dec, out, make([]int32, 4), idx); err != nil {
+	if err := new(Unbwt).Decode(dec, out, make([]int32, 5), idx); err != nil {
 		t.Fatal(err)
 	}
 	if string(dec) != "abab" {
@@ -51,7 +51,7 @@ func TestRoundTrip(t *testing.T) {
 				t.Fatalf("primary index %d out of range [1, %d]", idx, n)
 			}
 			dec := make([]byte, n)
-			if err := Decode(dec, out, make([]int32, n), idx); err != nil {
+			if err := new(Unbwt).Decode(dec, out, make([]int32, n+1), idx); err != nil {
 				t.Fatal(err)
 			}
 			if !bytes.Equal(in, dec) {
@@ -64,7 +64,7 @@ func TestRoundTrip(t *testing.T) {
 func TestDecodeInvalidIndex(t *testing.T) {
 	in := []byte("banana")
 	for _, idx := range []int32{0, -1, 7} {
-		if err := Decode(make([]byte, 6), in, make([]int32, 6), idx); err == nil {
+		if err := new(Unbwt).Decode(make([]byte, 6), in, make([]int32, 7), idx); err == nil {
 			t.Fatalf("Decode with idx %d succeeded, want error", idx)
 		}
 	}
