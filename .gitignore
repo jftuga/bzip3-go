@@ -1,0 +1,4 @@
+/bzip3
+*.bz3
+!testdata/*.bz3
+testdata/fuzz/
