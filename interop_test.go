@@ -6,6 +6,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strings"
 	"testing"
 )
 
@@ -18,6 +19,23 @@ func cBinary(t *testing.T) string {
 		t.Skip("C bzip3 binary not found; skipping cross-validation")
 	}
 	return path
+}
+
+// cVersion returns the version token reported by the C bzip3 binary (e.g.
+// "1.5.3"), or "" if it cannot be determined or the binary on PATH is not
+// the reference C implementation (its -V output starts "bzip3 <version>").
+func cVersion(bin string) string {
+	out, err := exec.Command(bin, "-V").CombinedOutput()
+	if err != nil {
+		return ""
+	}
+	fields := strings.Fields(string(out))
+	for i, f := range fields {
+		if f == "bzip3" && i+1 < len(fields) {
+			return fields[i+1]
+		}
+	}
+	return ""
 }
 
 func runC(t *testing.T, bin string, stdin []byte, args ...string) []byte {
@@ -88,6 +106,14 @@ func TestCrossCEncodeGoDecode(t *testing.T) {
 // porting bug.
 func TestByteIdenticalEncode(t *testing.T) {
 	bin := cBinary(t)
+
+	// Byte-identity is version-specific: the port matches C bzip3 1.5.3's
+	// encoder output exactly, but other versions tune it differently.
+	// Round-trip cross-validation (above) still runs against any version.
+	const wantVersion = "1.5.3"
+	if v := cVersion(bin); v != wantVersion {
+		t.Skipf("byte-identity targets C bzip3 %s; found %q on PATH, skipping", wantVersion, v)
+	}
 
 	inputs := map[string]string{
 		"shakespeare": "testdata/shakespeare.txt",

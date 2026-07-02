@@ -1,5 +1,13 @@
 # Performance Improvement Task
 
+**Status: completed 2026-07-02.** All four tasks below were implemented
+(one commit each). Results: EncodeBlock 17.7 -> 17.9 MB/s, DecodeBlock
+16.8 -> 24.4 MB/s (decode now at parity with C bzip3; encode faster than
+C). Encoder scratch dropped from ~12x to ~8x block size. Remaining CPU
+is dominated by the arithmetic coder (~44% combined) and sais (~34%).
+Kept for reference; see README.md and PORTING_NOTES.md for current
+numbers.
+
 This document is a self-contained task input for a fresh Claude session. It
 describes measured hotspots in `github.com/jftuga/bzip3-go` and the
 optimization work to attempt, in priority order.

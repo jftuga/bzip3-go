@@ -56,8 +56,10 @@ the reference binary, including parallel mode.
   the final byte of a block often does not change the decoded output (true
   for the C implementation as well). Corruption tests must target the
   middle of the payload.
-- **Performance** (Apple M4, Go 1.26.4, 5.2 MB shakespeare.txt, single
-  thread): encode 0.37 s user vs 0.38 s for C (parity); decode 0.35 s vs
-  0.29 s (roughly 20% slower). Encoder scratch memory is ~12x block size
-  versus C's ~8x because the suffix array uses `[]int`. See
-  PERFORMANCE_IMPROVEMENT.md.
+- **Performance** (Apple M4, Go 1.26.4, single thread, after the
+  2026-07-02 optimization pass from PERFORMANCE_IMPROVEMENT.md): on a
+  21 MiB single-block input, encode 0.34 s user vs 0.44 s for C (Go
+  faster); decode 0.24 s vs 0.23 s (parity). The wins came from porting
+  libsais's bigram unBWT (decode +36%), hoisting the arithmetic-coder
+  counter rows into locals, and slicing-by-8 CRC. The sais port was also
+  retyped to `int32`, so encoder scratch is ~8x block size, matching C.
