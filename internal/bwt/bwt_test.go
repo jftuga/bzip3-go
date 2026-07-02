@@ -12,7 +12,7 @@ func TestKnownVector(t *testing.T) {
 	// so U = "bbaa" with primary index 2.
 	in := []byte("abab")
 	out := make([]byte, 4)
-	idx := Encode(out, in, make([]int, 4))
+	idx := Encode(out, in, make([]int32, 4))
 	if string(out) != "bbaa" || idx != 2 {
 		t.Fatalf("Encode(abab) = %q idx %d, want \"bbaa\" idx 2", out, idx)
 	}
@@ -46,7 +46,7 @@ func TestRoundTrip(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			n := len(in)
 			out := make([]byte, n)
-			idx := Encode(out, in, make([]int, n))
+			idx := Encode(out, in, make([]int32, n))
 			if idx < 1 || int(idx) > n {
 				t.Fatalf("primary index %d out of range [1, %d]", idx, n)
 			}

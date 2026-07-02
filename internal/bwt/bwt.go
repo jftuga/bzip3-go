@@ -18,7 +18,7 @@ var ErrInvalidIndex = errors.New("bwt: invalid primary index")
 
 // Encode computes the BWT of in into out (both length n) using sa as
 // suffix-array scratch space (len(sa) >= n). It returns the primary index.
-func Encode(out, in []byte, sa []int) int32 {
+func Encode(out, in []byte, sa []int32) int32 {
 	n := len(in)
 	if n == 0 {
 		return 0

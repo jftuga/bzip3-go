@@ -34,7 +34,7 @@ type State struct {
 	blockSize int32
 	swap      []byte
 	lut       []int32
-	sa        []int   // BWT scratch, allocated on first encode
+	sa        []int32 // BWT scratch, allocated on first encode
 	lf        []int32 // unBWT biPSI scratch, allocated on first decode
 	cm        cm.Coder
 	unbwt     *bwt.Unbwt // unBWT bucket tables, allocated on first decode
@@ -55,9 +55,9 @@ func NewState(blockSize int32) (*State, error) {
 // BlockSize returns the block size the state was created with.
 func (s *State) BlockSize() int32 { return s.blockSize }
 
-func (s *State) saBuf() []int {
+func (s *State) saBuf() []int32 {
 	if s.sa == nil {
-		s.sa = make([]int, s.blockSize)
+		s.sa = make([]int32, s.blockSize)
 	}
 	return s.sa
 }
