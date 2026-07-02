@@ -77,6 +77,14 @@ version. Note Go's flag parsing does not support combined short options
 - Native Go fuzz targets port upstream's AFL harnesses (round trip, frame
   decompression, block decoding against adversarial input).
 
+## Performance
+
+On an Apple M4, throughput is competitive with C bzip3 1.5.3; on a 21 MiB
+single-block input, Go encode measured slightly faster than C (0.37s vs
+0.45s user), and decode is within ~20%. These are single-file measurements,
+not a rigorous benchmark, but there is no order-of-magnitude gap. See
+`PERFORMANCE_IMPROVEMENT.md` for profiled hotspots and optimization ideas.
+
 ## Differences from the C implementation
 
 - Malformed streams whose blocks decode to a size other than the advertised
@@ -84,8 +92,8 @@ version. Note Go's flag parsing does not support combined short options
   buffer bytes in some of these cases.
 - The suffix array uses `[]int` (8 bytes per entry on 64-bit platforms)
   versus C's `int32_t`, so encoding needs roughly `12 * blockSize` bytes of
-  scratch versus C's ~8. Converting the SA-IS port to `int32` is a possible
-  future optimization.
+  scratch versus C's ~8. This is a memory difference, not a speed one;
+  converting the SA-IS port to `int32` is a possible future optimization.
 - `bz3_recover` mode and the batch (`-B`) CLI mode are not implemented.
 
 ## License
