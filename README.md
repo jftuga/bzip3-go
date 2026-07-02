@@ -12,6 +12,15 @@ The codec pipeline is, per independent block:
 3. BWT - Burrows-Wheeler transform via a linear-time SA-IS suffix array
 4. An order-0 context-mixing arithmetic coder
 
+## Disclaimer
+
+This port was vibe-coded with Claude Fable 5 as a fun experiment to see
+how well an AI-assisted port of a C library and its CLI would turn out.
+In my limited testing it produced byte-for-byte identical artifacts to
+the C implementation, but it has not seen production use. Anyone who
+depends on bzip3 for real work should use the reference C implementation
+at <https://github.com/iczelia/bzip3>.
+
 ## Library
 
 ```go
