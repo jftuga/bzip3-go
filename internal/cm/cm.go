@@ -36,9 +36,6 @@ func (s *Coder) Begin() {
 	}
 }
 
-func update0(p *uint16, x uint) { *p -= *p >> x }
-func update1(p *uint16, x uint) { *p += (*p ^ 65535) >> x }
-
 // Encode compresses buf into out and returns the number of bytes written.
 // out must be large enough for the worst case; the caller passes a
 // bz3_bound-sized region as upstream does.
@@ -61,16 +58,19 @@ func (s *Coder) Encode(out, buf []byte) int {
 
 		ctx := 1
 		c := uint32(b)
+		c1row := &s.c1[c1]
+		c2row := &s.c1[c2]
 
 		for ctx < 256 {
 			p0 := int(s.c0[ctx])
-			p1 := int(s.c1[c1][ctx])
-			p2 := int(s.c1[c2][ctx])
+			p1 := int(c1row[ctx])
+			p2 := int(c2row[ctx])
 			p := ((p0+p1)*7 + p2 + p2) >> 4
 
 			j := p >> 12
-			x1 := int(s.c2[2*ctx+f][j])
-			x2 := int(s.c2[2*ctx+f][j+1])
+			apm := &s.c2[2*ctx+f]
+			x1 := int(apm[j])
+			x2 := int(apm[j+1])
 			ssep := x1 + ((x2-x1)*(p&4095))>>12
 
 			if c&128 != 0 {
@@ -83,10 +83,10 @@ func (s *Coder) Encode(out, buf []byte) int {
 					high = high<<8 + 0xFF
 				}
 
-				update1(&s.c0[ctx], 2)
-				update1(&s.c1[c1][ctx], 4)
-				update1(&s.c2[2*ctx+f][j], 6)
-				update1(&s.c2[2*ctx+f][j+1], 6)
+				s.c0[ctx] = uint16(p0 + ((p0 ^ 65535) >> 2))
+				c1row[ctx] = uint16(p1 + ((p1 ^ 65535) >> 4))
+				apm[j] = uint16(x1 + ((x1 ^ 65535) >> 6))
+				apm[j+1] = uint16(x2 + ((x2 ^ 65535) >> 6))
 				ctx += ctx + 1
 			} else {
 				low += uint32((uint64(high-low)*uint64(ssep*3+p))>>18) + 1
@@ -98,10 +98,10 @@ func (s *Coder) Encode(out, buf []byte) int {
 					high = high<<8 + 0xFF
 				}
 
-				update0(&s.c0[ctx], 2)
-				update0(&s.c1[c1][ctx], 4)
-				update0(&s.c2[2*ctx+f][j], 6)
-				update0(&s.c2[2*ctx+f][j+1], 6)
+				s.c0[ctx] = uint16(p0 - p0>>2)
+				c1row[ctx] = uint16(p1 - p1>>4)
+				apm[j] = uint16(x1 - x1>>6)
+				apm[j+1] = uint16(x2 - x2>>6)
 				ctx += ctx
 			}
 
@@ -154,16 +154,19 @@ func (s *Coder) Decode(src, dst []byte) {
 		}
 
 		ctx := 1
+		c1row := &s.c1[c1]
+		c2row := &s.c1[c2]
 
 		for ctx < 256 {
 			p0 := int(s.c0[ctx])
-			p1 := int(s.c1[c1][ctx])
-			p2 := int(s.c1[c2][ctx])
+			p1 := int(c1row[ctx])
+			p2 := int(c2row[ctx])
 			p := ((p0+p1)*7 + p2 + p2) >> 4
 
 			j := p >> 12
-			x1 := int(s.c2[2*ctx+f][j])
-			x2 := int(s.c2[2*ctx+f][j+1])
+			apm := &s.c2[2*ctx+f]
+			x1 := int(apm[j])
+			x2 := int(apm[j+1])
 			ssep := x1 + ((x2-x1)*(p&4095))>>12
 
 			mid := low + uint32((uint64(high-low)*uint64(ssep*3+p))>>18)
@@ -180,16 +183,16 @@ func (s *Coder) Decode(src, dst []byte) {
 			}
 
 			if bit {
-				update1(&s.c0[ctx], 2)
-				update1(&s.c1[c1][ctx], 4)
-				update1(&s.c2[2*ctx+f][j], 6)
-				update1(&s.c2[2*ctx+f][j+1], 6)
+				s.c0[ctx] = uint16(p0 + ((p0 ^ 65535) >> 2))
+				c1row[ctx] = uint16(p1 + ((p1 ^ 65535) >> 4))
+				apm[j] = uint16(x1 + ((x1 ^ 65535) >> 6))
+				apm[j+1] = uint16(x2 + ((x2 ^ 65535) >> 6))
 				ctx += ctx + 1
 			} else {
-				update0(&s.c0[ctx], 2)
-				update0(&s.c1[c1][ctx], 4)
-				update0(&s.c2[2*ctx+f][j], 6)
-				update0(&s.c2[2*ctx+f][j+1], 6)
+				s.c0[ctx] = uint16(p0 - p0>>2)
+				c1row[ctx] = uint16(p1 - p1>>4)
+				apm[j] = uint16(x1 - x1>>6)
+				apm[j+1] = uint16(x2 - x2>>6)
 				ctx += ctx
 			}
 		}
